@@ -98,6 +98,7 @@ public class UsuarioServiceTest {
 
         Usuario savedUser = service.salvar(userToSave);
 
+
         /*
             É IMPORTANTE LEMBRAR QUE O MOCKITO UTILIZA O MÉTODO "EQUALS" PARA FAZER AS COMPARAÇÕES DO OBJETO QUE FOI
             UTILIZADO NO MOCK DO MÉTODO E DO QUE FOI UTILIZADO NA CHAMADA DO MÉTODO, SE FOREM DIVERGENTES DA ERRADO.
@@ -119,5 +120,6 @@ public class UsuarioServiceTest {
         when(repository.getUserByEmail(userTosave.getEmail())).thenReturn(Optional.of(UsuarioBuilder.getInstance().build()));
         ValidationException ex = Assertions.assertThrows(ValidationException.class, () -> service.salvar(userTosave));
         Assertions.assertTrue( ex.getMessage().endsWith("já cadastrado!"));
+        verify(repository, never()).salvar(userTosave);
     }
 }

@@ -1,8 +1,6 @@
 package br.ce.wcaquino.barriga.domain.builders;
 
-import br.ce.wcaquino.barriga.domain.Conta;
-
-import static java.lang.String.format;
+import br.ce.wcaquino.barriga.domain.Transacao;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -12,91 +10,107 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Classe responsável pela criação de builders de entidades
  *
- * @author wcaquino@gmail.com
+ * @author wcaquino
  *
  */
 public class BuilderMaster {
 
-    Set<String> listaImports = new HashSet<String>();
+    Set<String> listaImports;
+
+    public BuilderMaster() {
+        listaImports = new HashSet<String>();
+        listaImports.add("import java.util.Arrays;");
+//		listaImports.add("import java.util.Collections;");
+//		listaImports.add("import java.util.ArrayList;");
+    }
 
     @SuppressWarnings("rawtypes")
     public void gerarCodigoClasse(Class classe) {
+
 
         String nomeClasse = classe.getSimpleName() + "Builder";
 
         StringBuilder builder = new StringBuilder();
 
-        builder.append(format("public class %s {\n", nomeClasse));
-        List<Field> declaredFields = getClassFields(classe).stream()
-                .filter(campo -> !campo.getName().equals("serialVersionUID") && !Modifier.isStatic(campo.getModifiers()))
-                .collect(Collectors.toList());
-        declaredFields.forEach(campo -> {
-            if (campo.getType().getSimpleName().equals("List"))
-                builder.append(format("\tprivate %s<%s> %s;\n", campo.getType().getSimpleName(), getGenericSimpleName(campo), campo.getName()));
-            else
-                builder.append(format("\tprivate %s %s;\n", campo.getType().getSimpleName(), campo.getName()));
-        });
+        builder.append("public class ").append(nomeClasse).append(" {\n");
+        builder.append("\tprivate ").append(classe.getSimpleName()).append(" elemento;\n");
 
-        builder.append(format("\n\tprivate %s(){}\n\n", nomeClasse));
+        builder.append("\tprivate ").append(nomeClasse).append("(){}\n\n");
 
-        builder.append(format("\tpublic static %s um%s() {\n", nomeClasse, classe.getSimpleName()));
-        builder.append(format("\t\t%s builder = new %s();\n", nomeClasse, nomeClasse));
+        builder.append("\tpublic static ").append(nomeClasse).append(" um").append(classe.getSimpleName()).append("() {\n");
+        builder.append("\t\t").append(nomeClasse).append(" builder = new ").append(nomeClasse).append("();\n");
         builder.append("\t\tinicializarDadosPadroes(builder);\n");
         builder.append("\t\treturn builder;\n");
         builder.append("\t}\n\n");
 
-        builder.append(format("\tprivate static void inicializarDadosPadroes(%s builder) {\n", nomeClasse));
-        declaredFields.forEach(campo -> builder.append(format("\t\tbuilder.%s = %s;\n", campo.getName(), getDefaultParameter(campo))));
+        builder.append("\tpublic static void inicializarDadosPadroes(").append(nomeClasse).append(" builder) {\n");
+        builder.append("\t\tbuilder.elemento = new ").append(classe.getSimpleName()).append("();\n");
+        builder.append("\t\t").append(classe.getSimpleName()).append(" elemento = builder.elemento;\n");
+        builder.append("\n\t\t\n");
+
+        List<Field> declaredFields = getClassFields(classe);
+        for(Field campo: declaredFields) {
+            if(campo.getName().equals("serialVersionUID"))
+                continue;
+            if(Modifier.isStatic(campo.getModifiers()))
+                continue;
+            builder.append("\t\telemento.set").append(campo.getName().substring(0, 1).toUpperCase()).append(campo.getName().substring(1)).append("(").append(getDefaultParameter(campo)).append(");\n");
+
+        }
         builder.append("\t}\n\n");
 
-        for (Field campo : declaredFields) {
-            registrarImports(campo.getType().getCanonicalName());
-            if (campo.getType().getSimpleName().equals("List")) {
-                registrarImports("java.util.Arrays");
-                builder.append(format("\tpublic %s comLista%s%s(%s... %s) {\n",
-                        nomeClasse, campo.getName().substring(0, 1).toUpperCase(), campo.getName().substring(1), getGenericSimpleName(campo), campo.getName()));
-                builder.append(format("\t\tthis.%s = Arrays.asList(%s);\n", campo.getName(), campo.getName()));
+        for(Field campo: declaredFields) {
+            if(campo.getName().equals("serialVersionUID"))
+                continue;
+            if(Modifier.isStatic(campo.getModifiers()))
+                continue;
+            if(campo.getType().getSimpleName().equals("List")) {
+                ParameterizedType stringListType = (ParameterizedType) campo.getGenericType();
+                builder.append("\tpublic ")
+                        .append(nomeClasse)
+                        .append(" comLista").append(campo.getName().substring(0, 1).toUpperCase()).append(campo.getName().substring(1))
+                        .append("(").append(((Class)stringListType.getActualTypeArguments()[0]).getSimpleName()).append("... params) {\n");
+////				List<elemType> lista = new ArrayList<elemType>();
+//				builder.append("\t\tList<").append(((Class)stringListType.getActualTypeArguments()[0]).getSimpleName()).append("> lista = new ArrayList<")
+//					.append(((Class)stringListType.getActualTypeArguments()[0]).getSimpleName()).append(">();\n");
+//				registrarImports(((Class)stringListType.getActualTypeArguments()[0]).getName());
+////				Collections.addAll(lista, args);
+//				builder.append("\t\tCollections.addAll(lista, params);\n");
+////				elemento.setelemTypes(lista);
+                builder.append("\t\telemento.set").append(campo.getName().substring(0, 1).toUpperCase()).append(campo.getName().substring(1)).append("(Arrays.asList(params));\n");
+
+                builder.append("\t\treturn this;\n");
+                builder.append("\t}\n\n");
             } else {
-                builder.append(format("\tpublic %s com%s%s(%s %s) {\n",
-                        nomeClasse, campo.getName().substring(0, 1).toUpperCase(), campo.getName().substring(1), campo.getType().getSimpleName(), campo.getName()));
-                builder.append(format("\t\tthis.%s = %s;\n", campo.getName(), campo.getName()));
+                builder.append("\tpublic ")
+                        .append(nomeClasse)
+                        .append(" com").append(campo.getName().substring(0, 1).toUpperCase()).append(campo.getName().substring(1))
+                        .append("(").append(campo.getType().getSimpleName()).append(" param) {\n");
+                registrarImports(campo.getType().getCanonicalName());
+                builder.append("\t\telemento.set")
+                        .append(campo.getName().substring(0, 1).toUpperCase()).append(campo.getName().substring(1))
+                        .append("(param);\n");
+                builder.append("\t\treturn this;\n");
+                builder.append("\t}\n\n");
             }
-            builder.append("\t\treturn this;\n");
-            builder.append("\t}\n\n");
         }
 
-        builder.append(format("\tpublic %s agora() {\n", classe.getSimpleName()));
-        builder.append(format("\t\treturn new %s(", classe.getSimpleName()));
-        boolean first = true;
-        for (Field campo : declaredFields) {
-            if(first) {
-                first = false;
-            } else {
-                builder.append(", ");
-            }
-            builder.append(campo.getName());
-        }
-        builder.append(");\n\t}\n");
+        builder.append("\tpublic ").append(classe.getSimpleName()).append(" agora() {\n");
+        builder.append("\t\treturn elemento;\n");
+        builder.append("\t}\n");
 
         builder.append("}");
 
-        for (String str : listaImports) {
-            if(!str.contains("java.lang."))
-                System.out.println(str);
+        for(String str: listaImports) {
+            System.out.println(str);
         }
-        System.out.println(format("import %s;\n", classe.getCanonicalName()));
+        System.out.println("import " + classe.getCanonicalName() + ";");
+        System.out.println("\n");
         System.out.println(builder.toString());
-    }
-
-    @SuppressWarnings("rawtypes")
-    private String getGenericSimpleName(Field campo) {
-        ParameterizedType stringListType = (ParameterizedType) campo.getGenericType();
-        return ((Class) stringListType.getActualTypeArguments()[0]).getSimpleName();
     }
 
     @SuppressWarnings("rawtypes")
@@ -104,7 +118,7 @@ public class BuilderMaster {
         List<Field> fields = new ArrayList<Field>();
         fields.addAll(Arrays.asList(classe.getDeclaredFields()));
         Class superClass = classe.getSuperclass();
-        if (superClass != Object.class) {
+        if(superClass != Object.class) {
             List<Field> fieldsSC = Arrays.asList(superClass.getDeclaredFields());
             fields.addAll(fieldsSC);
         }
@@ -113,31 +127,30 @@ public class BuilderMaster {
 
     public String getDefaultParameter(Field campo) {
         String tipo = campo.getType().getSimpleName();
-        if (tipo.equals("int") || tipo.equals("Integer")) {
+        if(tipo.equals("int") || tipo.equals("Integer")){
             return "0";
         }
-        if (tipo.equalsIgnoreCase("long")) {
+        if(tipo.equals("long") || tipo.equals("Long")){
             return "0L";
         }
-        if (tipo.equalsIgnoreCase("double") || tipo.equalsIgnoreCase("float")) {
+        if(tipo.equals("double") || tipo.equals("Double")){
             return "0.0";
         }
-        if (tipo.equalsIgnoreCase("boolean")) {
+        if(tipo.equals("boolean") || tipo.equals("Boolean")){
             return "false";
         }
-        if (tipo.equals("String")) {
+        if(tipo.equals("String")){
             return "\"\"";
         }
         return "null";
     }
 
     public void registrarImports(String classe) {
-        if (classe.contains("."))
+        if(classe.contains("."))
             listaImports.add("import " + classe + ";");
     }
 
     public static void main(String[] args) {
-        BuilderMaster master = new BuilderMaster();
-        master.gerarCodigoClasse(Conta.class);
+        new BuilderMaster().gerarCodigoClasse(Transacao.class);
     }
 }
