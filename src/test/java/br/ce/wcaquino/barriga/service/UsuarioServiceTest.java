@@ -1,9 +1,8 @@
-package br.ce.wcaquino.barriga.infra.service;
+package br.ce.wcaquino.barriga.service;
 
 import br.ce.wcaquino.barriga.domain.Usuario;
 import br.ce.wcaquino.barriga.domain.builders.UsuarioBuilder;
 import br.ce.wcaquino.barriga.domain.exceptions.ValidationException;
-import br.ce.wcaquino.barriga.service.UsuarioService;
 import br.ce.wcaquino.barriga.service.repositories.UsuarioRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;

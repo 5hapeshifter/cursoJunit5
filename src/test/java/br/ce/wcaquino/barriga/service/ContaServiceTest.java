@@ -1,9 +1,8 @@
-package br.ce.wcaquino.barriga.infra.service;
+package br.ce.wcaquino.barriga.service;
 
 import br.ce.wcaquino.barriga.domain.Conta;
 import br.ce.wcaquino.barriga.domain.builders.ContaBuilder;
 import br.ce.wcaquino.barriga.domain.exceptions.ValidationException;
-import br.ce.wcaquino.barriga.service.ContaService;
 import br.ce.wcaquino.barriga.service.external.ContaEvento;
 import br.ce.wcaquino.barriga.service.repositories.ContaRepository;
 import org.junit.jupiter.api.Assertions;
